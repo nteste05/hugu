@@ -1,0 +1,11 @@
+{
+    "name": "HuGu: Aplikasi Simulasi Hurdy Gurdy",
+    "short_name": "HuGu",
+    "description": "Aplikasi Simulasi Hurdy Gurdy Online",
+    "icons": "hugu-favicon.jpeg",
+    "theme_color": "#2D2D2D",
+    "background_color": "#2D2D2D",
+    "display": "standalone",
+    "start_url": "./index.html",
+    "orientation": "portrait"
+}
