@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    
+    <link rel="canonical" href="https://nteste05.github.io/hugu/" />
+    <link rel="icon" type="image/jpeg" href="hugu-favicon.jpeg" sizes="32x32">
+    <link rel="apple-touch-icon" sizes="180x180" href="hugu-favicon.jpeg">
+    <link rel="manifest" href="manifest.json">
+    
+    <title>Hugu: Aplikasi Simulasi Hurdy Gurdy Online</title>
+    <meta name="description" content="Mainkan simulasi Hurdy Gurdy autentik dengan Hugu langsung di browser. Fitur 4 mode (C-Minor, D-Dorian, D-Aeolian, C-Mayor), tuts 2 oktaf, drone harmoni, serta fitur REKAM & SIMPAN karya Anda secara gratis tanpa download.">
+    <meta name="keywords" content="Hurdy Gurdy Simulator, Simulator Hurdy Gurdy Online, Alat Musik Abad Pertengahan Online, Hugu App, Virtual Hurdy Gurdy">
+    <meta name="robots" content="index, follow">
+    
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nteste05.github.io/hugu">
+    <meta property="og:title" content="Hugu: Aplikasi Simulasi Hurdy Gurdy Online">
+    <meta property="og:description" content="Mainkan simulasi Hurdy Gurdy autentik dengan Hugu langsung di browser. Fitur 4 mode (C-Minor, D-Dorian, D-Aeolian, C-Mayor), tuts 2 oktaf, drone harmoni, serta fitur REKAM & SIMPAN karya Anda secara gratis tanpa download.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/nteste05/hugu/refs/heads/main/hugu-thumb.jpeg">
+    
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://nteste05.github.io/hugu">
+    <meta property="twitter:title" content="Hugu: Aplikasi Simulasi Hurdy Gurdy Online">
+    <meta property="twitter:description" content="Mainkan simulasi Hurdy Gurdy autentik dengan Hugu langsung di browser. Fitur 4 mode (C-Minor, D-Dorian, D-Aeolian, C-Mayor), tuts 2 oktaf, drone harmoni, serta fitur REKAM & SIMPAN karya Anda secara gratis tanpa download.">
+    <meta property="twitter:image" content="https://raw.githubusercontent.com/nteste05/hugu/refs/heads/main/hugu-thumb.jpeg">
+    
+    <style>
+        * { -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; touch-action: manipulation; box-sizing: border-box;}
+        
+        body { background: #1a1a1a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0 15px; margin: 0; }
+        
+        .header { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; justify-content: center; }
+        .mode-btn { padding: 8px 12px; cursor: pointer; border: none; background: #333; color: white; border-radius: 4px; font-size: 11px; }
+        .mode-btn.active { background: #e67e22; }
+
+        .gurdy-body { background: #4d3319; padding: 10px; border-radius: 20px; border: 4px solid #3d2610; width: 100%; max-width: 900px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+
+        .wheel-area { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+        .wheel { width: 90px; height: 90px; border-radius: 50%; border: 6px dashed #8e44ad; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #ecf0f1; text-align: center; }
+        .wheel.spinning { animation: spin 0.5s linear infinite; border-color: #f1c40f; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .label { display: block; margin: 15px 0 8px 0; font-weight: bold; color: #bdc3c7; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
+
+        
+        .keys-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); 
+            gap: 5px; 
+        }
+
+        .box-key { 
+            aspect-ratio: 1 / 1; 
+            background: #f39c12; 
+            color: #2c3e50; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            border-bottom: 4px solid #d35400;
+            font-size: 13px;
+            transition: background 0.1s;
+            user-select: none;
+            touch-action: none;
+        }
+        .box-key.active { background: #f1c40f; transform: translateY(2px); border-bottom-width: 2px; }
+
+        .drone-panel { margin-top: 20px; padding-top: 15px; border-top: 2px solid #3d2610; }
+        .drone-key { background: #7f8c8d; border-bottom-color: #2c3e50; color: white; }
+        .drone-key.active { background: #1abc9c; border-bottom-color: #16a085; }
+        
+        .rec-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 8px;
+            margin: 0;
+        }
+        .rec-controls button {
+            font-size: 16px;
+            padding: 5px;
+            color: white;
+            background: #7f8c8d;
+            box-shadow: 0 2px #2c3e50;
+        }
+        .rec-controls button:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px #1c3e50;
+        }
+        #btnRecord.recording {
+            background: #ff4444;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        
+        .navbar {
+            padding: 10px 0;
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: #bbb;
+            font-size: 24px;
+            cursor: pointer;
+            margin: 0 5px 0 0;
+        }
+
+        header h1 {
+            font-size: 16px;
+            margin:0 10px 0;
+        }
+
+        .sidebar {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 2000;
+            top: 0;
+            left: 0;
+            background-color: #1a1a1a;
+            overflow-x: hidden;
+            transition: 0.3s;
+            padding-top: 10px;
+        }
+
+        .sidebar a {
+            padding: 15px 30px;
+            text-decoration: none;
+            font-size: 1.1rem;
+            color: #ccc;
+            display: block;
+            transition: 0.2s;
+            border-bottom: 1px solid #bbb;
+        }
+
+        .sidebar a:hover {
+            color: #818cf8;
+            background-color: var(--card);
+        }
+
+        .sidebar .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 36px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .overlaynav {
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1500;
+        }
+        
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        
+        footer {
+            font-size: 12px;
+            margin-top: 20px;
+            padding: 10px;
+        }
+        
+    </style>
+</head>
+<body>
+    <div id="mySidebar" class="sidebar">
+        <span class="close-btn" onclick="closeNav()">&times;</span>
+        <a href="https://nteste05.github.io/gemii/" onclick="closeNav()">👽 Lainnya</a>
+    </div>
+    <div id="overlaynav" class="overlaynav" onclick="closeNav()"></div>
+    <nav class="navbar">
+        <div class="menu-btn" onclick="openNav()">&#9776;</div>
+        <header><h1>HuGu: hurdy gurdy</h1></header>
+        <div class="rec-controls">
+            <button id="btnRecord">🔴</button>
+            <button id="btnStop" disabled>⏺️</button>
+            <button id="btnPlay" disabled>▶️</button>
+            <button id="btnSave" disabled>💾</button>
+        </div>
+    </nav>
+    <div class="header" id="modeSelector">
+        <button class="mode-btn active" data-mode="ladur">LADUR (C-Min)</button>
+        <button class="mode-btn" data-mode="dorian">MEDIEVAL (D-Dorian)</button>
+        <button class="mode-btn" data-mode="aeolian">VIKING (D-Aeolian)</button>
+        <button class="mode-btn" data-mode="major">TRADITIONAL (C-Maj)</button>
+    </div>
+
+    <div class="gurdy-body">
+        <div class="wheel-area">
+            <div id="crank" class="wheel">TAHAN &<br>USAP</div>
+        </div>
+        <div class="allKeys">
+        <span class="label">Kunci Melodi (2 Oktaf)</span>
+        <div class="keys-grid" id="keyboard"></div>
+
+        <div class="drone-panel">
+            <div class="keys-grid" id="droneKeyboard"></div>
+            <span class="label">Kunci Drone (Fundamental+Harmoni)</span>
+        </div></div>
+    </div>
+
+<script>
+    const modes = {
+        ladur: {
+            notes: [261.63, 293.66, 311.13, 349.23, 392.00, 415.30, 466.16, 523.25, 587.33, 622.25, 698.46, 783.99, 830.61, 932.33, 1046.50],
+            labels: ['C', 'D', 'Eb', 'F', 'G', 'Ab', 'Bb', 'C2', 'D2', 'Eb2', 'F2', 'G2', 'Ab2', 'Bb2', 'C3'],
+            drones: [130.81, 146.83, 155.56, 174.61, 196.00, 207.65, 233.08, 261.63],
+            labeldrone: ['C', 'D', 'Eb', 'F', 'G', 'Ab', 'Bb', 'C2']
+        },
+        dorian: {
+            notes: [293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50, 1174.66],
+            labels: ['D', 'E', 'F', 'G', 'A', 'B', 'C', 'D2', 'E2', 'F2', 'G2', 'A2', 'B2', 'C2', 'D3'],
+            drones: [146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63, 293.66],
+            labeldrone: ['D', 'E', 'F', 'G', 'A', 'B', 'C', 'D2']
+        },
+        aeolian: {
+            notes: [293.66, 329.63, 349.23, 392.00, 440.00, 466.16, 523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 932.33, 1046.50, 1174.66],
+            labels: ['D', 'E', 'F', 'G', 'A', 'Bb', 'C', 'D2', 'E2', 'F2', 'G2', 'A2', 'Bb2', 'C2', 'D3'],
+            drones: [146.83, 164.81, 174.61, 196.00, 220.00, 233.08, 261.63, 293.66],
+            labeldrone: ['D', 'E', 'F', 'G', 'A', 'Bb', 'C', 'D2']
+            
+        },
+        major: {
+            notes: [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50],
+            labels: ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C2', 'D2', 'E2', 'F2', 'G2', 'A2', 'B2', 'C3'],
+            drones: [130.81, 146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63],
+            labeldrone: ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C2']
+        }
+    };
+
+    let audioCtx, mainGain;
+    let isCranking = false;
+    let currentMode = 'ladur';
+    const activeNotes = new Map();
+    const activeDrones = new Map();
+
+    function initAudio() {
+        if (audioCtx) return;
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        mainGain = audioCtx.createGain();
+        mainGain.gain.value = 0;
+        mainGain.connect(audioCtx.destination);
+        mainGain.connect(dest);
+    }
+
+    function updateMainVolume() {
+        if (!mainGain) return;
+        
+        const hasKeys = activeNotes.size > 0 || activeDrones.size > 0;
+        const targetVol = (isCranking || hasKeys) ? 0.7 : 0;
+        mainGain.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.1);
+    }
+
+    function renderKeys() {
+        const kb = document.getElementById('keyboard');
+        kb.innerHTML = '';
+        modes[currentMode].notes.forEach((freq, i) => {
+            const key = document.createElement('div');
+            key.className = 'box-key';
+            key.innerText = modes[currentMode].labels[i];
+
+            const start = (e) => {
+                e.preventDefault();
+                e.target.setPointerCapture(e.pointerId);
+                initAudio();
+                if (!isCranking || activeNotes.has(freq)) return;
+
+                const osc = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.value = freq;
+                osc.detune.value = Math.random() * 6;
+                g.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                osc.connect(g).connect(mainGain);
+                osc.start();
+                
+                key.classList.add('active');
+                activeNotes.set(freq, { osc, g });
+                updateMainVolume();
+            };
+
+            const stop = () => {
+                if (activeNotes.has(freq)) {
+                    const n = activeNotes.get(freq);
+                    n.g.gain.setTargetAtTime(0, audioCtx.currentTime, 0.05);
+                    n.osc.stop(audioCtx.currentTime + 0.1);
+                    activeNotes.delete(freq);
+                    key.classList.remove('active');
+                    updateMainVolume();
+                }
+            };
+
+            key.addEventListener('pointerdown', start);
+            key.addEventListener('pointerup', stop);
+            
+            kb.appendChild(key);
+        });
+    }
+
+    function renderDroneKeys() {
+        const dkb = document.getElementById('droneKeyboard');
+        dkb.innerHTML = '';
+        modes[currentMode].drones.forEach((freq, i) => {
+            const dKey = document.createElement('div');
+            dKey.className = 'box-key drone-key';
+            dKey.innerText = modes[currentMode].labeldrone[i];
+
+
+            const start = (e) => {
+                e.preventDefault();
+                e.target.setPointerCapture(e.pointerId);
+                initAudio();
+                if (!isCranking || activeDrones.has(freq)) return;
+                
+                const voices = [freq, freq * 1.5, freq * 2];
+                const nodes = voices.map((f, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = i === 2 ? 'triangle' : 'sawtooth';
+                    o.frequency.value = f;
+                    o.detune.value = i * 3;
+                    g.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    o.connect(g).connect(mainGain);
+                    o.start();
+                    return { o, g };
+                });
+
+                dKey.classList.add('active');
+                activeDrones.set(freq, nodes);
+                updateMainVolume();
+            };
+
+            const stop = () => {
+                if (activeDrones.has(freq)) {
+                    const nodes = activeDrones.get(freq);
+                    nodes.forEach(n => {
+                        n.g.gain.setTargetAtTime(0, audioCtx.currentTime, 0.1);
+                        n.o.stop(audioCtx.currentTime + 0.2);
+                    });
+                    activeDrones.delete(freq);
+                    dKey.classList.remove('active');
+                    updateMainVolume();
+                }
+            };
+            
+            dKey.addEventListener('pointerdown', start);
+            dKey.addEventListener('pointerup', stop);
+            
+            dkb.appendChild(dKey);
+        });
+    }
+    
+    const crank = document.getElementById('crank');
+    crank.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        initAudio();
+        isCranking = true;
+        crank.classList.add('spinning');
+        updateMainVolume();
+    });
+    
+    window.addEventListener('pointerup', (e) => {
+        if (e.target.closest('.allKeys')) return;
+        isCranking = false;
+        crank.classList.remove('spinning');
+        updateMainVolume();
+    });
+    
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentMode = btn.dataset.mode;
+            
+            // Hentikan suara jika ganti mode
+            activeNotes.forEach(n => n.osc.stop());
+            activeDrones.forEach(nodes => nodes.forEach(n => n.o.stop()));
+            activeNotes.clear();
+            activeDrones.clear();
+
+            renderKeys();
+            renderDroneKeys();
+            updateMainVolume();
+        };
+    });
+    
+    renderKeys();
+    renderDroneKeys();
+    
+    let mediaRecorder;
+    let recordedChunks = [];
+    const dest = audioCtx ? audioCtx.createMediaStreamDestination() : null;
+    
+    const btnRecord = document.getElementById('btnRecord');
+    const btnStop = document.getElementById('btnStop');
+    const btnPlay = document.getElementById('btnPlay');
+    const btnSave = document.getElementById('btnSave');
+    
+    btnRecord.onclick = () => {
+        if (playbackAudio) {
+            playbackAudio.pause();
+            playbackAudio = null;
+        }
+        initAudio();
+        if (!mediaRecorder) {
+            const destStream = audioCtx.createMediaStreamDestination();
+            mainGain.connect(destStream);
+            mediaRecorder = new MediaRecorder(destStream.stream);
+        }
+        
+        recordedChunks = [];
+        mediaRecorder.start();
+        btnRecord.classList.add('recording');
+        btnRecord.disabled = true;
+        btnStop.disabled = false;
+        btnPlay.disabled = true;
+        btnSave.disabled = true;
+    };
+    
+    btnStop.onclick = () => {
+        mediaRecorder.stop();
+        btnRecord.classList.remove('recording');
+        btnRecord.disabled = false;
+        btnPlay.disabled = false;
+        btnSave.disabled = false;
+        if (playbackAudio) {
+            playbackAudio.pause();
+            playbackAudio.currentTime = 0;
+            btnPlay.innerText = "▶️";
+            playbackAudio = null;
+        }
+        mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+    };
+    
+    btnSave.onclick = () => {
+        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'HuGu-nteste05.webm';
+        a.click();
+    };
+    
+    let playbackAudio = null;
+    
+    btnPlay.onclick = () => {
+        if (playbackAudio) {
+            playbackAudio.pause();
+            playbackAudio = null;
+        }
+        const blob = new Blob(recordedChunks, { type: 'audio/webm' });
+        const audioUrl = URL.createObjectURL(blob);
+        playbackAudio = new Audio(audioUrl);
+        playbackAudio.play();
+        btnPlay.innerText = "🔊";
+        playbackAudio.onended = () => {
+            btnPlay.innerText = "▶️";
+            URL.revokeObjectURL(audioUrl);
+            playbackAudio = null;
+        };
+    };
+
+    
+    const sidebar = document.getElementById("mySidebar");
+    const overlaynav = document.getElementById("overlaynav");
+        
+    function openNav() {
+        sidebar.style.width = "280px";
+        overlaynav.style.display = "block";
+        document.body.style.overflow = "hidden";
+    }
+    
+    function closeNav() {
+        sidebar.style.width = "0";
+        overlaynav.style.display = "none";
+        document.body.style.overflow = "auto";
+    }
+</script>
+    <footer>
+        <p class="visually-hidden">Mainkan Alat Musik Abad Pertengahan Secara Instan dengan Hugu: Aplikasi Simulasi Hurdy Gurdy Online<br><br>Apakah Anda ingin merasakan resonansi magis instrumen Hurdy Gurdy tanpa harus merogoh kocek puluhan juta rupiah? Perkenalkan Hugu, <strong>aplikasi simulasi Hurdy Gurdy berbasis browser</strong> tercanggih yang menghadirkan suara autentik musik folk dan medieval langsung ke perangkat Anda. Tanpa perlu download, tanpa instalasi, Anda bisa mulai berkarya hanya dalam satu klik.</p>
+        <p class="visually-hidden"><strong>HuGu</strong> adalah simulator instrumen dawai putar (Hurdy Gurdy) yang dirancang khusus untuk musisi, komposer, hingga penggemar sejarah yang ingin mengeksplorasi harmoni unik instrumen kuno ini. Dengan antarmuka yang intuitif dan responsif, Hugu mengubah keyboard atau layar sentuh Anda menjadi mekanisme crank dan tuts yang realistis</p>
+        <p class="visually-hidden">Keunggulan utama Hugu terletak pada fleksibilitas modenya. Kami menyediakan empat pilihan mode tangga nada (scale) yang paling sering digunakan dalam repertoar musik tradisional dan kontemporer:<br>C-Minor: Cocok untuk menciptakan suasana yang melankolis, dramatis, dan penuh perasaan.<br>D-Dorian: Mode favorit para pemain musik rakyat (folk) yang memberikan kesan gagah namun misterius, sering ditemukan dalam musik-musik bertema fantasi.<br>D-Aeolian: Sering dikenal sebagai natural minor, mode ini memberikan nuansa klasik dan gelap yang sangat kental dengan atmosfer abad pertengahan.<br>C-Mayor: Untuk komposisi yang cerah, riang, dan penuh semangat.</p>
+        <p class="visually-hidden">Rentang Nada Luas & Drone Harmoni yang Kaya<br>Meskipun berupa aplikasi web, Hugu tidak mengorbankan fungsionalitas musiknya. Aplikasi ini dilengkapi dengan:<br>Tuts 2 Oktaf: Memberikan kebebasan bagi Anda untuk memainkan melodi yang kompleks, dari nada rendah yang berat hingga nada tinggi yang melengking tajam.<br>Drone Harmoni 1 Oktaf: Ciri khas utama Hurdy Gurdy adalah suara drone (dengungan) yang terus-menerus. Dengan kontrol drone satu oktaf, Anda bisa mengatur harmoni latar belakang yang memberikan tekstur suara kaya dan "penuh" pada permainan melodi Anda.</p>
+        <p class="visually-hidden">Abadikan Kreativitas dengan Fitur Rekam & Simpan<br>Seringkali inspirasi datang di saat yang tidak terduga. Dengan Hugu, Anda tidak perlu takut kehilangan melodi indah yang baru saja Anda temukan. Kami telah menyematkan fitur Rekam dan Simpan yang terintegrasi langsung di dalam aplikasi:<br>One-Click Recording: Cukup tekan tombol rekam, dan Hugu akan menangkap setiap nuansa nada serta dengungan drone yang Anda mainkan secara real-time.<br>Simpan ke Perangkat: Setelah selesai berkreasi, Anda dapat menyimpan file audio tersebut langsung ke komputer atau smartphone Anda. Gunakan hasil rekaman untuk sampel musik, latar belakang podcast, atau sekadar koleksi pribadi.<br>Tanpa Batas: Rekam sebanyak yang Anda mau. Hugu memberikan kebebasan penuh bagi Anda untuk bereksperimen dengan mode C-Minor yang sendu atau D-Dorian yang epik tanpa batasan durasi</p>
+        <p class="visually-hidden">Mengapa Memilih Hugu?<br>Akses Instan di Browser: Lupakan proses instalasi yang rumit. Buka browser Anda, ketik Hugu, dan mainkan. Sangat ringan dan kompatibel untuk desktop maupun perangkat mobile.<br>Kualitas Audio High-Fidelity: Setiap nada disampling dengan teliti untuk memastikan karakter suara kayu dan gesekan senar Hurdy Gurdy asli tetap terjaga.<br>Gratis & Mudah Digunakan: Dirancang untuk semua level, baik Anda seorang profesional yang mencari referensi nada atau pemula yang baru mengenal instrumen ini.<br>Solusi Komposisi Digital: Bagi produser musik, Hugu adalah alat bantu yang sempurna untuk mencoba progresi akor dan melodi sebelum memindahkannya ke dalam DAW.</p>
+        <p class="visually-hidden">Hugu menjembatani sejarah musik masa lalu dengan teknologi masa kini. Dengan kombinasi 4 mode nada, tuts 2 oktaf, dan drone harmoni, Anda memiliki orkestra abad pertengahan mini di dalam saku Anda.<br>Siap menciptakan melodi legendaris Anda hari ini? Kunjungi situs resmi Hugu dan mulai putar crank virtual Anda sekarang juga!</p>
+        <p>&copy; 2026 <a style="color: inherit; text-decoration: none;" href="https://nteste05.github.io/hugu/">Hugu: Aplikasi Simulasi Hurdy Gurdy Online</a> All Rights Reserved.</p>
+    </footer>
+</body>
+</html>
