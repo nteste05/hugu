@@ -32,25 +32,28 @@
         body { background: #1a1a1a; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 0 15px; margin: 0; }
         
         .header { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 15px; justify-content: center; }
-        .mode-btn { padding: 8px 12px; cursor: pointer; border: none; background: #333; color: white; border-radius: 4px; font-size: 11px; }
+        .mode-btn, .metronome-controls { padding: 8px 12px; cursor: pointer; border: none; background: #333; color: white; border-radius: 4px; font-size: 11px; }
         .mode-btn.active { background: #e67e22; }
-
+        
+        .metronome-controls {user-select: none}
+        .metronome-controls input { width: 30px; user-select: none; }
+        .active-met { color: #ffcc00; font-weight: bold; }
+        
         .gurdy-body { background: #4d3319; padding: 10px; border-radius: 20px; border: 4px solid #3d2610; width: 100%; max-width: 900px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-
+        
         .wheel-area { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
         .wheel { width: 90px; height: 90px; border-radius: 50%; border: 6px dashed #8e44ad; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #ecf0f1; text-align: center; }
         .wheel.spinning { animation: spin 0.5s linear infinite; border-color: #f1c40f; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
+        
         .label { display: block; margin: 15px 0 8px 0; font-weight: bold; color: #bdc3c7; text-transform: uppercase; font-size: 10px; letter-spacing: 1px; }
-
         
         .keys-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); 
             gap: 5px; 
         }
-
+        
         .box-key { 
             aspect-ratio: 1 / 1; 
             background: #f39c12; 
@@ -68,7 +71,7 @@
             touch-action: none;
         }
         .box-key.active { background: #f1c40f; transform: translateY(2px); border-bottom-width: 2px; }
-
+        
         .drone-panel { margin-top: 20px; padding-top: 15px; border-top: 2px solid #3d2610; }
         .drone-key { background: #7f8c8d; border-bottom-color: #2c3e50; color: white; }
         .drone-key.active { background: #1abc9c; border-bottom-color: #16a085; }
@@ -96,15 +99,13 @@
         }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
-        
         .navbar {
             padding: 10px 0;
             display: flex;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 10px;
             color: white;
         }
-
         .menu-btn {
             background: none;
             border: none;
@@ -113,12 +114,10 @@
             cursor: pointer;
             margin: 0 5px 0 0;
         }
-
         header h1 {
             font-size: 16px;
             margin:0 10px 0;
         }
-
         .sidebar {
             height: 100%;
             width: 0;
@@ -131,7 +130,6 @@
             transition: 0.3s;
             padding-top: 10px;
         }
-
         .sidebar a {
             padding: 15px 30px;
             text-decoration: none;
@@ -142,12 +140,10 @@
             transition: 0.2s;
             border-bottom: 1px solid #bbb;
         }
-
         .sidebar a:hover {
             color: #818cf8;
             background-color: var(--card);
         }
-
         .sidebar .close-btn {
             position: absolute;
             top: 10px;
@@ -156,7 +152,6 @@
             color: white;
             cursor: pointer;
         }
-
         .overlaynav {
             display: none;
             position: fixed;
@@ -211,8 +206,13 @@
         <button class="mode-btn" data-mode="dorian">MEDIEVAL (D-Dorian)</button>
         <button class="mode-btn" data-mode="aeolian">VIKING (D-Aeolian)</button>
         <button class="mode-btn" data-mode="major">TRADITIONAL (C-Maj)</button>
+        <div class="metronome-controls">
+            <label>Metronome: </label>
+            <input type="number" id="bpm" value="120" min="40" max="240"> BPM
+            <button id="metroBtn" onclick="toggleMetronome()">START</button>
+            <span id="metroStatus" class="active-met"></span>
+        </div>
     </div>
-
     <div class="gurdy-body">
         <div class="wheel-area">
             <div id="crank" class="wheel">TAHAN &<br>USAP</div>
@@ -220,13 +220,11 @@
         <div class="allKeys">
         <span class="label">Kunci Melodi (2 Oktaf)</span>
         <div class="keys-grid" id="keyboard"></div>
-
         <div class="drone-panel">
             <div class="keys-grid" id="droneKeyboard"></div>
             <span class="label">Kunci Drone (Fundamental+Harmoni)</span>
         </div></div>
     </div>
-
 <script>
     const modes = {
         ladur: {
@@ -261,7 +259,48 @@
     let currentMode = 'ladur';
     const activeNotes = new Map();
     const activeDrones = new Map();
-
+    
+    // Variabel Metronome
+    let isMetronomeOn = false;
+    let nextNoteTime = 0.0;
+    let timerID;
+    const lookahead = 25.0; 
+    const scheduleAheadTime = 0.1; 
+    
+    function playClick(time) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.setValueAtTime(1000, time);
+        gain.gain.setValueAtTime(0.5, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+        osc.start(time);
+        osc.stop(time + 0.1);
+    }
+    
+    function scheduler() {
+        while (nextNoteTime < audioCtx.currentTime + scheduleAheadTime) {
+            playClick(nextNoteTime);
+            const secondsPerBeat = 60.0 / document.getElementById('bpm').value;
+            nextNoteTime += secondsPerBeat;
+        }
+        timerID = setTimeout(scheduler, lookahead);
+    }
+    
+    function toggleMetronome() {
+        isMetronomeOn = !isMetronomeOn;
+        if (isMetronomeOn) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            nextNoteTime = audioCtx.currentTime;
+            scheduler();
+            document.getElementById('metroBtn').innerText = "STOP";
+        } else {
+            clearTimeout(timerID);
+            document.getElementById('metroBtn').innerText = "START";
+        }
+    }
+    
     function initAudio() {
         if (audioCtx) return;
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -270,7 +309,7 @@
         mainGain.connect(audioCtx.destination);
         mainGain.connect(dest);
     }
-
+    
     function updateMainVolume() {
         if (!mainGain) return;
         
@@ -278,7 +317,7 @@
         const targetVol = (isCranking || hasKeys) ? 0.7 : 0;
         mainGain.gain.setTargetAtTime(targetVol, audioCtx.currentTime, 0.1);
     }
-
+    
     function renderKeys() {
         const kb = document.getElementById('keyboard');
         kb.innerHTML = '';
@@ -286,13 +325,13 @@
             const key = document.createElement('div');
             key.className = 'box-key';
             key.innerText = modes[currentMode].labels[i];
-
+            
             const start = (e) => {
                 e.preventDefault();
                 e.target.setPointerCapture(e.pointerId);
                 initAudio();
                 if (!isCranking || activeNotes.has(freq)) return;
-
+                
                 const osc = audioCtx.createOscillator();
                 const g = audioCtx.createGain();
                 osc.type = 'sawtooth';
@@ -306,7 +345,7 @@
                 activeNotes.set(freq, { osc, g });
                 updateMainVolume();
             };
-
+            
             const stop = () => {
                 if (activeNotes.has(freq)) {
                     const n = activeNotes.get(freq);
@@ -317,14 +356,14 @@
                     updateMainVolume();
                 }
             };
-
+            
             key.addEventListener('pointerdown', start);
             key.addEventListener('pointerup', stop);
             
             kb.appendChild(key);
         });
     }
-
+    
     function renderDroneKeys() {
         const dkb = document.getElementById('droneKeyboard');
         dkb.innerHTML = '';
@@ -332,8 +371,7 @@
             const dKey = document.createElement('div');
             dKey.className = 'box-key drone-key';
             dKey.innerText = modes[currentMode].labeldrone[i];
-
-
+            
             const start = (e) => {
                 e.preventDefault();
                 e.target.setPointerCapture(e.pointerId);
@@ -352,12 +390,12 @@
                     o.start();
                     return { o, g };
                 });
-
+                
                 dKey.classList.add('active');
                 activeDrones.set(freq, nodes);
                 updateMainVolume();
             };
-
+            
             const stop = () => {
                 if (activeDrones.has(freq)) {
                     const nodes = activeDrones.get(freq);
@@ -405,7 +443,7 @@
             activeDrones.forEach(nodes => nodes.forEach(n => n.o.stop()));
             activeNotes.clear();
             activeDrones.clear();
-
+            
             renderKeys();
             renderDroneKeys();
             updateMainVolume();
@@ -489,7 +527,6 @@
             playbackAudio = null;
         };
     };
-
     
     const sidebar = document.getElementById("mySidebar");
     const overlaynav = document.getElementById("overlaynav");
